@@ -1,0 +1,135 @@
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1" name="viewport"/>
+  <title>
+   Emotion Detection System
+  </title>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&amp;display=swap" rel="stylesheet"/>
+  <style>
+   body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    /* Custom scrollbar for the mood list */
+    ul::-webkit-scrollbar {
+      width: 8px;
+    }
+    ul::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ul::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+    }
+  </style>
+ </head>
+ <body class="flex items-center justify-center px-4 py-12">
+  <div class="max-w-md w-full bg-white bg-opacity-20 backdrop-blur-md rounded-3xl shadow-2xl p-8 text-white">
+   <div class="flex justify-center mb-6">
+    <img alt="Smiling face emoji representing emotion detection system logo" class="w-20 h-20" height="100" src="https://storage.googleapis.com/a1aa/image/69c12aaf-9271-4e74-6f38-0e2160eeba12.jpg" width="100"/>
+   </div>
+   <h1 class="text-3xl font-extrabold text-center mb-8 tracking-wide drop-shadow-lg">
+    Emotion Detection System
+   </h1>
+
+   <form action="" method="POST" enctype="multipart/form-data" class="mb-8">
+    <label for="imageUpload" class="cursor-pointer flex flex-col items-center justify-center border-4 border-dashed border-white border-opacity-50 rounded-xl p-6 hover:border-yellow-400 transition-colors duration-300">
+     <i class="fas fa-cloud-upload-alt text-5xl text-yellow-300 mb-4"></i>
+     <span class="text-white font-semibold text-lg">Click to upload an image</span>
+     <input accept="image/*" class="hidden" id="imageUpload" name="image" type="file"/>
+    </label>
+    <button type="submit" class="mt-6 w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold py-3 rounded-xl shadow-lg transition duration-300 flex items-center justify-center gap-3">
+     <i class="fas fa-search"></i> Detect Emotion
+    </button>
+   </form>
+   <div class="mt-4 text-center">
+    <a href="{{ url_for('webcam_page') }}" class="bg-blue-400 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition duration-300">
+      Capture Image with Webcam
+    </a>
+  </div>
+  
+  
+  <script>
+    const video = document.getElementById("webcam");
+    const canvas = document.getElementById("snapshot");
+    const context = canvas.getContext("2d");
+  
+    // Start webcam stream
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        video.srcObject = stream;
+      });
+  
+    function capturePhoto() {
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL("image/jpeg");
+  
+      fetch("/capture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageData }),
+      })
+      .then(res => res.text())
+      .then(html => {
+        document.open();
+        document.write(html);
+        document.close();
+      });
+    }
+  </script>
+  
+  
+
+   {% if result_img %}
+   <div class="mb-8 text-center">
+    <h2 class="text-2xl font-semibold mb-4 text-yellow-300 drop-shadow-lg">Result:</h2>
+    <img alt="Uploaded image with bounding boxes highlighting detected emotions" class="mx-auto rounded-xl shadow-lg max-w-full h-auto border-4 border-yellow-400" src="{{ url_for('static', filename=result_img) }}" width="500"/>
+   </div>
+   {% endif %}
+
+   {% if detections %}
+   <h3 class="text-xl font-semibold mb-4 flex items-center justify-center gap-3">
+    <i class="fas fa-smile-beam text-yellow-300 text-2xl animate-pulse">
+    </i>
+    Detected Moods:
+   </h3>
+   <ul class="max-h-48 overflow-y-auto space-y-3 px-4 py-3 bg-white bg-opacity-30 rounded-xl shadow-inner text-gray-900 font-medium">
+    {% for mood in detections %}
+    <li class="flex items-center gap-3 bg-white bg-opacity-70 rounded-lg px-4 py-2 shadow-md hover:scale-105 transform transition duration-300 cursor-default select-none">
+     <i aria-hidden="true" class="fas fa-smile text-yellow-500 text-xl">
+     </i>
+     <span class="capitalize">
+      {{ mood }}
+     </span>
+    </li>
+    {% endfor %}
+   </ul>
+   {% else %}
+   <div class="text-center text-yellow-200 font-semibold text-lg py-8 select-none">
+    No moods detected yet.
+   </div>
+   {% endif %}
+  </div>
+
+  <script>
+   // Animate the mood list items with a subtle fade-in and upward motion on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      const listItems = document.querySelectorAll("ul li");
+      listItems.forEach((item, index) => {
+        item.style.opacity = 0;
+        item.style.transform = "translateY(20px)";
+        setTimeout(() => {
+          item.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+          item.style.opacity = 1;
+          item.style.transform = "translateY(0)";
+        }, index * 150);
+      });
+    });
+  </script>
+ </body>
+</html>
